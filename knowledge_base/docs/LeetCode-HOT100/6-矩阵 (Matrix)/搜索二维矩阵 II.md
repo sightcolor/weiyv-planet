@@ -1,0 +1,139 @@
+# 搜索二维矩阵 II
+
+> **题目链接:** [LeetCode Link](https://leetcode.cn/problems/search-a-2d-matrix-ii/)
+
+---
+
+## 题目描述
+
+> 编写一个高效的算法来搜索 `m x n` 矩阵 `matrix` 中的一个目标值 `target` 。该矩阵具有以下特性：
+> *   每行的元素从左到右升序排列。
+> *   每列的元素从上到下升序排列。
+>
+> **示例:**
+> ```
+> 输入: matrix = [[1,4,7,11,15],[2,5,8,12,19],[3,6,9,16,22],[10,13,14,17,24],[18,21,23,26,30]], target = 5
+> 输出: true
+> ```
+>
+> ```
+> 输入: matrix = [[1,4,7,11,15],[2,5,8,12,19],[3,6,9,16,22],[10,13,14,17,24],[18,21,23,26,30]], target = 20
+> 输出: false
+> ```
+
+---
+
+## 解题思路
+
+### 思路一：逐行二分查找
+
+#### 核心思想
+利用矩阵每行都是有序的特性。我们可以遍历矩阵的每一行，然后对该行使用二分查找来确定 `target` 是否存在。为了提高效率，可以先判断 `target` 是否在当前行的数值范围内，如果不在，则可以跳过该行的二分查找。
+
+#### 算法步骤
+1.  **初始化**: 获取矩阵的行数 `m` 和列数 `n`。
+2.  **遍历行**: 循环遍历每一行（从 `i = 0` 到 `m-1`）。
+3.  **范围剪枝**: 在对当前行进行二分查找之前，先进行判断：
+    *   如果 `target` 小于当前行的第一个元素 `matrix[i][0]`，由于列也是升序的，后续行的第一个元素会更大，所以 `target` 不可能存在于矩阵中，直接 `break` 循环。
+    *   如果 `target` 大于当前行的最后一个元素 `matrix[i][n-1]`，则 `target` 不可能在当前行，`continue` 到下一行。
+4.  **二分查找**: 如果 `target` 在当前行的范围内，对当前行 `matrix[i]` 使用二分查找（例如 `std::lower_bound`）来寻找 `target`。
+5.  **判断结果**: 如果二分查找找到了 `target`，立即返回 `true`。
+6.  **返回**: 如果遍历完所有行都没有找到 `target`，返回 `false`。
+
+#### 复杂度分析
+- **时间复杂度**: O(M * logN)
+  *(其中 M 是矩阵的行数，N 是矩阵的列数。我们需要遍历 M 行，对每一行进行二分查找的时间是 O(logN))*
+- **空间复杂度**: O(1)
+  *(除了几个循环变量外，没有使用额外的存储空间。)*
+
+---
+
+### 思路二：Z字形查找 (从右上角开始)
+
+#### 核心思想
+利用矩阵行列都单调递增的特性，选择一个特殊的起点开始搜索，每一步都能排除一行或一列。右上角（或左下角）是理想的起点。以右上角为例，当前值为 `x`：
+*   如果 `target < x`，那么 `x` 所在的那一整列都大于 `target`，可以排除该列。
+*   如果 `target > x`，那么 `x` 所在的那一整行都小于 `target`，可以排除该行。
+
+通过这种方式，我们每一步都缩小搜索范围，直到找到目标或超出边界。
+
+#### 算法步骤
+1.  **初始化**: 创建两个指针，`row` 指向第一行（`row = 0`），`col` 指向最后一列（`col = n - 1`）。这样我们就定位到了矩阵的右上角。
+2.  **循环搜索**: 当指针在矩阵范围内时（`row < m` 且 `col >= 0`），执行以下逻辑：
+3.  **逻辑判断**:
+    *   获取当前值 `val = matrix[row][col]`。
+    *   如果 `val == target`，说明找到了目标，返回 `true`。
+    *   如果 `val > target`，说明当前列的所有元素都过大，需要向左移动来减小值。更新 `col--`。
+    *   如果 `val < target`，说明当前行的所有元素都过小，需要向下移动来增大值。更新 `row++`。
+4.  **返回**: 如果循环结束（指针移出矩阵边界），说明矩阵中不存在 `target`，返回 `false`。
+
+#### 复杂度分析
+- **时间复杂度**: O(M + N)
+  *(在最坏的情况下，指针 `row` 从 0 移动到 M-1，指针 `col` 从 N-1 移动到 0。总的移动步数最多为 M + N - 1 次。)*
+- **空间复杂度**: O(1)
+  *(我们只使用了 `row` 和 `col` 两个变量来存储位置，因此空间复杂度是常数级的。)*
+
+---
+
+## 代码实现
+
+### C++ (思路一：逐行二分查找)
+```cpp
+#include <vector>
+#include <algorithm> // for std::lower_bound
+
+class Solution {
+public:
+    // 思路一：对每一行进行二分查找，复杂度为 O(M*logN)
+    bool searchMatrix(std::vector<std::vector<int>>& matrix, int target) {
+        int m = matrix.size(), n = matrix[0].size();
+        for(int i = 0; i < m; i++) {
+            int first = matrix[i][0];
+            int last = matrix[i][n - 1];
+
+            // 剪枝优化
+            if(target < first) {
+                break; // target比当前行最小的还小，后续行也一定更大
+            } else if(target > last) {
+                continue; // target比当前行最大的还大，跳到下一行
+            } else {
+                // 在当前行进行二分查找
+                auto it = std::lower_bound(matrix[i].begin(), matrix[i].end(), target);
+                // 检查是否找到，并且找到的值确实是 target
+                if (it != matrix[i].end() && *it == target) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+};
+```
+### C++ (思路二：Z字形查找)
+```cpp
+#include <vector>
+
+class Solution {
+public:
+    // 思路二：从右上角开始进行Z字形查找，复杂度为 O(M+N)
+    bool searchMatrix(std::vector<std::vector<int>>& matrix, int target) {
+        int m = matrix.size(), n = matrix[0].size();
+        int row = 0, col = n - 1; // 从右上角开始
+
+        // 只要指针还在矩阵内就继续搜索
+        while(row < m && col >= 0) {
+            int val = matrix[row][col];
+            if(val == target) {
+                return true;
+            } else if(val > target) {
+                // 当前值太大，排除此列
+                col--;
+            } else { // val < target
+                // 当前值太小，排除此行
+                row++;
+            }
+        }
+        return false;
+    }
+};
+```

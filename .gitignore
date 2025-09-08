@@ -1,0 +1,39 @@
+# Node.js依赖
+node_modules/
+knowledge_base/node_modules/
+
+# VitePress文档构建产物
+knowledge_base/docs/.vitepress/dist/
+knowledge_base/docs/.vitepress/cache/
+
+# 日志文件
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# IDE/编辑器配置
+.idea/
+.vscode/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# Python缓存
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# 备份/临时文件
+*.bak
+*.tmp
+*.swp
+*.swo
+*.md~
